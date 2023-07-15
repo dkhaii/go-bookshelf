@@ -23,10 +23,11 @@ func index(writer http.ResponseWriter, request *http.Request) {
 	fmt.Fprint(writer, "welcome gerin")
 }
 
-func insert(writer http.ResponseWriter, request *http.Request) {
+func insertBook(writer http.ResponseWriter, request *http.Request) {
 	method := request.Method
 	if method != http.MethodPost {
 		http.Error(writer, "Method is not allowed", http.StatusMethodNotAllowed)
+		return
 	}
 
 	var book Book
@@ -42,6 +43,22 @@ func insert(writer http.ResponseWriter, request *http.Request) {
 	err2 := json.NewEncoder(writer).Encode(books)
 	if err2 != nil {
 		http.Error(writer, err2.Error(), http.StatusBadGateway)
+		return
+	}
+}
+
+func showAllBooks(writer http.ResponseWriter, request *http.Request) {
+	method := request.Method
+	if method != http.MethodGet {
+		http.Error(writer, "Method is not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
+	err := json.NewEncoder(writer).Encode(books)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusBadGateway)
+		return
 	}
 }
 
@@ -51,7 +68,8 @@ func main() {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", index)
-	mux.HandleFunc("/insert", insert)
+	mux.HandleFunc("/insert", insertBook)
+	mux.HandleFunc("/showAll", showAllBooks)
 
 	server := http.Server{
 		Addr:    "localhost:" + port,
