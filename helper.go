@@ -27,11 +27,20 @@ func GenerateId() int {
 	return rand.New(source).Intn(1000000)
 }
 
-func IsBookExist(id int) bool {
-	for _, book := range books {
+func FindBook(books []Book, id int) (int, bool) {
+	for index, book := range books {
 		if book.Id == id {
-			return true
+			return index, true
 		}
 	}
-	return false
+	return -1, false
 }
+
+// func FindBookById(books []Book, id int) int {
+// 	for index, book := range books {
+// 		if book.Id == id {
+// 			return index
+// 		}
+// 	}
+// 	return -1
+// }

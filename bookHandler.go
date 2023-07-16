@@ -3,6 +3,9 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 type Book struct {
@@ -49,21 +52,23 @@ func InsertBook(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	// making default values
 	book.Finished = book.PageCount == book.ReadPage
 	book.Id = GenerateId()
 
 	// push created book into array
 	books = append(books, book)
-	//validate if success
-	isInserted := IsBookExist(book.Id)
+	
+	//validate if sucess
+	_, isInserted := FindBook(books, book.Id)
 	if !isInserted {
-		http.Error(writer, "Failed to insert a new book", http.StatusBadGateway)
+		http.Error(writer, "Failed to insert a new book, please ty again", http.StatusBadGateway)
 		return
 	}
 
 	// http status, if created
 	writer.WriteHeader(http.StatusCreated)
-	// mapping the response
+	// mapping custom response
 	response := map[string]interface{}{
 		"message": "book created",
 		"data":    book,
@@ -74,10 +79,8 @@ func InsertBook(writer http.ResponseWriter, request *http.Request) {
 }
 
 func ShowAllBooks(writer http.ResponseWriter, request *http.Request) {
-	// setting the header to json
 	writer.Header().Set("Content-Type", "application/json")
 
-	// method checking
 	isGet := HttpGetMethodCheck(writer, request)
 	if !isGet {
 		http.Error(writer, request.Method+" Method is not allowed", http.StatusMethodNotAllowed)
@@ -90,14 +93,44 @@ func ShowAllBooks(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	// http status
 	writer.WriteHeader(http.StatusOK)
-	// mapping the response
 	reponse := map[string]interface{}{
 		"message": "Showing all books",
 		"data":    books,
 	}
 
-	// reponse in json
 	json.NewEncoder(writer).Encode(reponse)
+}
+
+func EditBook(writer http.ResponseWriter, request *http.Request) {
+	writer.Header().Set("Content-Type", "application/json")
+
+	isPut := HttpPutMethodCheck(writer, request)
+	if !isPut {
+		http.Error(writer, request.Method+" Method is not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// getting url params
+	params := mux.Vars(request)
+	bookId, err := strconv.Atoi(params["id"])
+	if err != nil {
+		http.Error(writer, "invalid id", http.StatusBadRequest)
+		return
+	}
+
+	// finding book by its id
+	bookData, isExist := FindBook(books, bookId)
+	if !isExist {
+		http.Error(writer, "id is not exist", http.StatusBadRequest)
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
+	response := map[string]interface{}{
+		"message": "menampilkan data buku",
+		"data":    books[bookData],
+	}
+
+	json.NewEncoder(writer).Encode(response)
 }

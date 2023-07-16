@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 func index(writer http.ResponseWriter, request *http.Request) {
@@ -13,15 +15,16 @@ func index(writer http.ResponseWriter, request *http.Request) {
 func main() {
 	port := "8080"
 
-	mux := http.NewServeMux()
+	routes := mux.NewRouter()
 
-	mux.HandleFunc("/api/v1", index)
-	mux.HandleFunc("/api/v1/insert", InsertBook)
-	mux.HandleFunc("/api/v1/showAll", ShowAllBooks)
+	routes.HandleFunc("/api/v1", index)
+	routes.HandleFunc("/api/v1/book/insert", InsertBook)
+	routes.HandleFunc("/api/v1/book/show-all", ShowAllBooks)
+	routes.HandleFunc("/api/v1/book/{id}", EditBook)
 
 	server := http.Server{
 		Addr:    "localhost:" + port,
-		Handler: mux,
+		Handler: routes,
 	}
 
 	err := server.ListenAndServe()
