@@ -20,7 +20,8 @@ func main() {
 	routes.HandleFunc("/api/v1", index)
 	routes.HandleFunc("/api/v1/book/insert", InsertBook)
 	routes.HandleFunc("/api/v1/book/show-all", ShowAllBooks)
-	routes.HandleFunc("/api/v1/book/{id}", EditBook)
+	routes.HandleFunc("/api/v1/book/find/{id}", GetBookById)
+	routes.HandleFunc("/api/v1/book/edit/{id}", EditBook)
 
 	server := http.Server{
 		Addr:    "localhost:" + port,
