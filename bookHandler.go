@@ -24,13 +24,6 @@ func InsertBook(writer http.ResponseWriter, request *http.Request) {
 	// setting the header to json
 	writer.Header().Set("Content-Type", "application/json")
 
-	// method checking
-	isPost := HttpPostMethodCheck(writer, request)
-	if !isPost {
-		http.Error(writer, request.Method+" Method is not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	// making book variable to store the payload data
 	var book Book
 
@@ -81,12 +74,6 @@ func InsertBook(writer http.ResponseWriter, request *http.Request) {
 func ShowAllBooks(writer http.ResponseWriter, request *http.Request) {
 	writer.Header().Set("Content-Type", "application/json")
 
-	isGet := HttpGetMethodCheck(writer, request)
-	if !isGet {
-		http.Error(writer, request.Method+" Method is not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	// check if array have values
 	if len(books) == 0 {
 		http.Error(writer, "There is no data yet", http.StatusOK)
@@ -122,7 +109,7 @@ func GetBookById(writer http.ResponseWriter, request *http.Request) {
 	// finding book by its id
 	bookData, isExist := FindBook(books, bookId)
 	if !isExist {
-		http.Error(writer, "id is not exist", http.StatusBadRequest)
+		http.Error(writer, "id is not exist", http.StatusNotFound)
 		return
 	}
 
@@ -138,12 +125,6 @@ func GetBookById(writer http.ResponseWriter, request *http.Request) {
 func EditBook(writer http.ResponseWriter, request *http.Request) {
 	writer.Header().Set("Content-Type", "application/json")
 
-	isPut := HttpPutMethodCheck(writer, request)
-	if !isPut {
-		http.Error(writer, request.Method+" Method is not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	params := mux.Vars(request)
 	bookId, paramsErr := strconv.Atoi(params["id"])
 	if paramsErr != nil {
@@ -153,7 +134,7 @@ func EditBook(writer http.ResponseWriter, request *http.Request) {
 
 	bookData, isExist := FindBook(books, bookId)
 	if !isExist {
-		http.Error(writer, "id is not exist", http.StatusBadRequest)
+		http.Error(writer, "id is not exist", http.StatusNotFound)
 		return
 	}
 
@@ -164,18 +145,60 @@ func EditBook(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, bodyErr.Error(), http.StatusBadRequest)
 	}
 
+	// validation
+	if book.Title == "" {
+		http.Error(writer, "Judul is required", http.StatusBadRequest)
+		return
+	}
+
+	if book.ReadPage > book.PageCount {
+		http.Error(writer, "readPage must not be above pageCount", http.StatusBadRequest)
+		return
+	}
+
 	// edit book data logic
 	books[bookData].Title = book.Title
 	books[bookData].Author = book.Author
 	books[bookData].Publisher = book.Publisher
 	books[bookData].PageCount = book.PageCount
 	books[bookData].ReadPage = book.ReadPage
-	books[bookData].Finished = book.Finished
+	books[bookData].Finished = book.PageCount == book.ReadPage
 
 	writer.WriteHeader(http.StatusOK)
 	response := map[string]interface{}{
 		"message": "menampilkan data buku",
 		"data":    books[bookData],
+	}
+
+	json.NewEncoder(writer).Encode(response)
+}
+
+func DeleteBook(writer http.ResponseWriter, request *http.Request) {
+	writer.Header().Set("Content-Type", "application/json")
+
+	params := mux.Vars(request)
+	bookId, paramsErr := strconv.Atoi(params["id"])
+	if paramsErr != nil {
+		http.Error(writer, "invalid id", http.StatusBadRequest)
+		return
+	}
+
+	bookIndex, isExist := FindBook(books, bookId)
+	if !isExist {
+		http.Error(writer, "id is not exist", http.StatusNotFound)
+	}
+
+	books = append(books[:bookIndex], books[bookIndex+1:]...)
+
+	_, deleteFail := FindBook(books, bookId)
+	if deleteFail {
+		http.Error(writer, "deleting process failed", http.StatusBadGateway)
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
+	response := map[string]interface{}{
+		"message": "book berhasil dihapus",
 	}
 
 	json.NewEncoder(writer).Encode(response)

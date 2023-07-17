@@ -1,27 +1,14 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
-
-	"github.com/gorilla/mux"
 )
-
-func index(writer http.ResponseWriter, request *http.Request) {
-	fmt.Fprint(writer, "welcome gerin")
-}
 
 func main() {
 	port := "8080"
 
-	routes := mux.NewRouter()
-
-	routes.HandleFunc("/api/v1", index)
-	routes.HandleFunc("/api/v1/book/insert", InsertBook)
-	routes.HandleFunc("/api/v1/book/show-all", ShowAllBooks)
-	routes.HandleFunc("/api/v1/book/find/{id}", GetBookById)
-	routes.HandleFunc("/api/v1/book/edit/{id}", EditBook)
+	routes := SetupRoutes()
 
 	server := http.Server{
 		Addr:    "localhost:" + port,
